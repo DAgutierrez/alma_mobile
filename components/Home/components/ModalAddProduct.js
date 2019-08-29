@@ -1,14 +1,12 @@
-import * as Font from 'expo-font';
+
 import React from 'react';
-import { StatusBar, 
+import { 
   Dimensions,
   View, 
   StyleSheet, 
   TouchableOpacity, 
   Text, 
-  TextInput, 
-  FlatList, 
-  ScrollView,
+  TextInput,
   Modal
 } from 'react-native';
 
@@ -16,9 +14,9 @@ import { StatusBar,
 import { AppRegistry } from 'react-native';
 import {LinearGradient} from 'expo-linear-gradient';
 
-import {Card, Button} from 'native-base';
+import {Card} from 'native-base';
 
-import {salesService} from './services/salesService';
+import {salesService} from '../../../services/salesService';
 
 import _ from 'lodash';
 
@@ -252,5 +250,3 @@ const styles = StyleSheet.create({
   
  
 });
-
-AppRegistry.registerComponent('App', () => App);
