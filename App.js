@@ -25,7 +25,9 @@ export default class App extends React.Component {
 
     Font.loadAsync({
       Roboto: require('native-base/Fonts/Roboto.ttf'),
-      Roboto_medium: require('native-base/Fonts/Roboto_medium.ttf')
+      Roboto_medium: require('native-base/Fonts/Roboto_medium.ttf'),
+      Roboto_light: require('./assets/fonts/Roboto-Light.ttf'),
+      Roboto_thin: require('./assets/fonts/Roboto-Thin.ttf')
     });
 
     StatusBar.setHidden(true);

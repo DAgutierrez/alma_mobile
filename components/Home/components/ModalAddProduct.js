@@ -49,7 +49,6 @@ export default class ModalAddProduct extends React.Component {
 
   async componentDidMount() {
     const product = this.props.product;
-    console.log('pro', this.props.product)
 
     this.setInitialData(this.props.product);
 
@@ -65,22 +64,21 @@ export default class ModalAddProduct extends React.Component {
     if(product.um) {
       if(product.um == 'gramos') {
         const amount = parseFloat(product.price) * 1000;
-        console.log(parseFloat(product.price));
-        console.log(amount)
+    
         this.setState({quantityInputEditable: false, showPlusAndMinorQuantity: false, amountInputEditable: true, isGrams: true, amount: amount.toString(), quantity: '1000'});
       } else {
-        console.log('here')
+      
         this.setState({amountInputEditable: false});
       }
       
     } else {
-      console.log('aqui')
+     
       this.setState({showPlusAndMinorQuantity: true, amountInputEditable: false});
     }
   }
 
   componentWillReceiveProps (props) {
-    console.log('update prop', props)
+
     if(props.isVisible) {
       this.setInitialData(props.product);
     } else {
@@ -93,22 +91,23 @@ export default class ModalAddProduct extends React.Component {
   }
 
 
-  async saveSale () {
+  saveSale () {
       const sale = {
         quantity: parseInt(this.state.quantity),
         salePriceGross: parseInt(this.state.amount),
-        updatedAt: moment().format('YYYY-MM-DD'),
-        createdAt: moment().format('YYYY-MM-DD'),
+        updatedAt: moment().format('YYYY-MM-DD HH:mm:ss'),
+        createdAt: moment().format('YYYY-MM-DD HH:mm:ss'),
         productName: this.props.product.productName
       }
 
-      await salesService.create(sale);
-
       this.props.closeModal();
+
+      salesService.create(sale);
+
+      
   }
 
   closeModal () {
-    console.log('close')
     this.setState({
       amount: null,
       quantity: null
@@ -141,7 +140,7 @@ export default class ModalAddProduct extends React.Component {
         style={{flex:1}}
         visible={this.props.isVisible}
         onRequestClose={() => {
-          console.log('close')
+
           this.setState({
             amount: null,
             quantity: null
@@ -208,7 +207,7 @@ export default class ModalAddProduct extends React.Component {
                                 
                                 quantity = Math.round( amount / parseFloat(this.props.product.price) );
                               }
-                              console.log(quantity);
+                             
                               this.setState({amount, quantity: quantity.toString()});
                             }
                             }

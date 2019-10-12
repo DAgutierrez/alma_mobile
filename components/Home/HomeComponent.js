@@ -12,6 +12,8 @@ import {
   Image
 } from 'react-native';
 
+import {salesService} from '../../services/salesService';
+
 
 import { AppRegistry } from 'react-native';
 import {LinearGradient} from 'expo-linear-gradient';
@@ -22,11 +24,14 @@ import {productService} from '../../services/productService';
 
 import _ from 'lodash';
 
+import moment from 'moment';
 
 const screenWidth = Math.round(Dimensions.get('window').width);
 const screenHeight = Math.round(Dimensions.get('window').height);
 
 import ModalAddProduct from './components/ModalAddProduct';
+
+import Toaster, { ToastStyles } from 'react-native-toaster';
 
 export default class Home extends React.Component {
   constructor() {
@@ -38,7 +43,8 @@ export default class Home extends React.Component {
       products: [],
       soldProducts: [],
       modalVisible: false,
-      productSelected: null
+      productSelected: null,
+      message: null
     };
 
     this.products= [];
@@ -89,7 +95,7 @@ export default class Home extends React.Component {
       if(searchedProducts.length > 0) {
         this.setState({soldProducts: searchedProducts});
       } else {
-        console.log('here')
+    
         this.setState({soldProducts: [{addProductButton: true}]});
       }
       
@@ -119,43 +125,69 @@ export default class Home extends React.Component {
    
   };
 
-  openAddProductModal (product) {
-    console.log('price', product.price)
-    this.setState({productSelected: product })
-    this.setState({modalVisible: true })
-    if(!product.isSold) {
-      this.updateProductIsSold(product.id);
+  saveSale (product) {
+    const sale = {
+      quantity: 1,
+      salePriceGross: product.price,
+      updatedAt: moment().format('YYYY-MM-DD HH:mm:ss'),
+      createdAt: moment().format('YYYY-MM-DD HH:mm:ss'),
+      productName: product.productName
     }
 
+    salesService.create(sale);
+
+    console.log('sale created!')
+  }
+
+  openAddProductModal (product) {
+    console.log('product', product)
+    if(product.um == 'gramos') {
+      this.setState({productSelected: product })
+      this.setState({modalVisible: true })
+      if(!product.isSold) {
+        this.updateProductIsSold(product.id);
+      }
+    } else {
+      this.setState({message:{ text: '¡Producto Agregado!', duration: 500, styles: ToastStyles.success, onHide: () => { this.setState({message:null})} }})
+
+      this.saveSale(product);
+    }
   }
 
   renderCardProduct (product) {
-    const cardWidth = screenWidth / 4.5;
-    const cardHeight = screenHeight / 8;
+    const cardWidth = screenWidth / 3.3;
+    const cardHeight = screenHeight / 4;
 
     if(product.addProductButton ) {
       return (
         <Card><Text>Nuevo</Text></Card>
       );
     } else {
-      const productName = (product.imageUrl) ? product.productName.substring(0, 11) : product.productName;
+      //const productName = (product.imageUrl) ? product.productName.substring(0, 11) : product.productName;
+      const productName = product.productName;
+      const price = (product.um == 'gramos') ?  product.price * 1000 : product.price; 
       return (
-        <TouchableOpacity onPress={() => this.openAddProductModal(product)}>
-          <Card style={{width:cardWidth, height: cardHeight, marginRight: 5, flex: 1, padding: 10}}>
+        <TouchableOpacity  style={{width:cardWidth, height: cardHeight,  flex: 1, padding: 10, backgroundColor: 'white'}} onPress={() => this.openAddProductModal(product)}>
+      
             {
               product.imageUrl ? (
                 <View style={{flex:1, flexGrow: 10, justifyContent: 'center', alignItems: 'center'}}>
-                  <Image   source={{uri: product.imageUrl}} style={{ height: null,
+                  <Image  resizeMode="contain" source={{uri: product.imageUrl}} style={{ height: null,
                       width: '100%',flex: 1}}/>
                 </View>   
               ) : null
             }
             
   
-            <View style={{flexGrow: 1, justifyContent: 'center', alignItems: 'center'}}>
-              <Text style={{fontFamily: 'Roboto', fontSize: 10}}>{productName}</Text>
+            <View style={{flexGrow: 2, justifyContent: 'center', alignItems: 'center'}}>
+              <Text style={{fontFamily: 'Roboto', fontSize: 14}}>{productName}</Text>
             </View>
-          </Card>
+
+            <View style={{flexGrow: 1, justifyContent: 'center', alignItems: 'center'}}>
+              <Text style={{fontFamily: 'Roboto_thin', fontSize: 12}}>${price}</Text>
+            </View>
+        
+        
         </TouchableOpacity>
       );
     }
@@ -170,11 +202,19 @@ export default class Home extends React.Component {
 
 
   render() {
-    console.log('render')
+    console.log('render', this.state.message);
     if(this.state.isLoaded) {
-      console.log('loaded')
+    
     return (
+   
+
       <View style={styles.container}>
+
+      
+        <Toaster message={this.state.message} />
+     
+
+      
           <LinearGradient colors={['#4dd0e1', '#18ffff']} style={{flexDirection: 'row', flexGrow: 1}} start={[0, 0]} end={[0.6, 0]}></LinearGradient>
           <View style={{flexGrow: 8, padding: 10}}>
 
@@ -193,7 +233,7 @@ export default class Home extends React.Component {
           <FlatList
               data={this.state.soldProducts}
               keyExtractor={(item, index) => index.toString()}
-              numColumns={4}
+              numColumns={3}
               renderItem={({item}) => this.renderCardProduct(item)} />
           </ScrollView>
       </View>
@@ -205,6 +245,7 @@ export default class Home extends React.Component {
               <ModalAddProduct closeModal={this.closeModal.bind(this)} product={this.state.productSelected} isVisible={this.state.modalVisible}></ModalAddProduct>
             ) : null
           }
+
          
       </View>
     )
