@@ -9,7 +9,11 @@ import {
   TextInput, 
   FlatList, 
   ScrollView,
-  Image
+  Image,
+  InputAccessoryView,
+  Keyboard,
+  SafeAreaView,
+  Button
 } from 'react-native';
 
 import {salesService} from '../../services/salesService';
@@ -33,6 +37,11 @@ import ModalAddProduct from './components/ModalAddProduct';
 
 import Toaster, { ToastStyles } from 'react-native-toaster';
 
+import KeyboardAccessory from 'react-native-sticky-keyboard-accessory';
+import { isIphoneX, getBottomSpace } from 'react-native-iphone-x-helper';
+import { KeyboardAccessoryView } from 'react-native-keyboard-accessory';
+
+import { Container, Header, Content, List, ListItem } from 'native-base';
 export default class Home extends React.Component {
   constructor() {
     super();
@@ -44,7 +53,8 @@ export default class Home extends React.Component {
       soldProducts: [],
       modalVisible: false,
       productSelected: null,
-      message: null
+      message: null,
+      productFinderVisible: false
     };
 
     this.products= [];
@@ -63,14 +73,41 @@ export default class Home extends React.Component {
 
     this.loadProducts();
 
+    this.keyboardShowListener = Keyboard.addListener('keyboardDidShow', (e) => this.keyboardShow(e));
+    this.keyboardHideListener = Keyboard.addListener('keyboardDidHide', (e) => this.keyboardHide(e));
+
+  }
+
+  keyboardShow(e) {
+    console.log('show keyboard')
+    // this.setState({
+    //   
+    // });
+    this.setState({
+      productFinderVisible: true,
+      bottom: isIphoneX() ? (e.endCoordinates.height - getBottomSpace()) : e.endCoordinates.height
+    });
+  }
+  
+  keyboardHide(e) {
+
+    // this.setState({
+    //   productFinderVisible:false
+    // });
+    this.setState({
+      productFinderVisible: false,
+      bottom: 0
+    });
   }
 
   async loadProducts () {
     this.setState({soldProducts: []});
     const response = await productService.getAll();
-    this.products = response.data;
+    this.products = this.filterByProductsWithImage(response.data);
 
-    const soldProducts = this.filterBySoldProducts(response.data);
+    let soldProducts = this.filterBySoldProducts(response.data);
+    soldProducts = this.filterByProductsWithImage(response.data);
+
     this.soldProducts = soldProducts;
     this.setState({soldProducts})
     this.setState({isLoaded: true})
@@ -79,6 +116,12 @@ export default class Home extends React.Component {
   filterBySoldProducts (products) {
    return _.filter(products, {'isSold': true})
   }
+
+  filterByProductsWithImage (products) {
+    return _.filter(products, (product) => {
+      return product.imageUrl;
+    })
+   }
 
   componentWillUnmount() {
    
@@ -126,6 +169,7 @@ export default class Home extends React.Component {
   };
 
   saveSale (product) {
+    console.log('save sale!')
     const sale = {
       quantity: 1,
       salePriceGross: product.price,
@@ -155,8 +199,9 @@ export default class Home extends React.Component {
   }
 
   renderCardProduct (product) {
-    const cardWidth = screenWidth / 3.3;
-    const cardHeight = screenHeight / 4;
+    const cardWidth = screenWidth / 6;
+    const cardHeight = screenHeight / 10;
+
 
     if(product.addProductButton ) {
       return (
@@ -167,11 +212,12 @@ export default class Home extends React.Component {
       const productName = product.productName;
       const price = (product.um == 'gramos') ?  product.price * 1000 : product.price; 
       return (
+    
         <TouchableOpacity  style={{width:cardWidth, height: cardHeight,  flex: 1, padding: 10, backgroundColor: 'white'}} onPress={() => this.openAddProductModal(product)}>
       
             {
               product.imageUrl ? (
-                <View style={{flex:1, flexGrow: 10, justifyContent: 'center', alignItems: 'center'}}>
+                <View style={{flex:1, flexGrow: 1, justifyContent: 'center', alignItems: 'center'}}>
                   <Image  resizeMode="contain" source={{uri: product.imageUrl}} style={{ height: null,
                       width: '100%',flex: 1}}/>
                 </View>   
@@ -179,13 +225,13 @@ export default class Home extends React.Component {
             }
             
   
-            <View style={{flexGrow: 2, justifyContent: 'center', alignItems: 'center'}}>
+            {/* <View style={{flexGrow: 2, justifyContent: 'center', alignItems: 'center'}}>
               <Text style={{fontFamily: 'Roboto', fontSize: 14}}>{productName}</Text>
             </View>
 
             <View style={{flexGrow: 1, justifyContent: 'center', alignItems: 'center'}}>
               <Text style={{fontFamily: 'Roboto_thin', fontSize: 12}}>${price}</Text>
-            </View>
+            </View> */}
         
         
         </TouchableOpacity>
@@ -199,10 +245,24 @@ export default class Home extends React.Component {
     this.setState({modalVisible: false})
   }
 
+  renderProductList () {
+    return (
+    // <ScrollView style={{flex: 1}}>
+      <FlatList
+          data={this.state.soldProducts}
+          horizontal={true}
+          keyExtractor={(item, index) => index.toString()}
+          renderItem={({item}) => this.renderCardProduct(item)} />
+    // </ScrollView>
+    )
+    
+  }
+
 
 
   render() {
-    console.log('render', this.state.message);
+    const inputAccessoryViewID = "uniqueID";
+
     if(this.state.isLoaded) {
     
     return (
@@ -210,11 +270,42 @@ export default class Home extends React.Component {
 
       <View style={styles.container}>
 
-      
-        <Toaster message={this.state.message} />
      
+     
+          {/* <KeyboardAccessory>
+            {this.renderProductList()}
+          </KeyboardAccessory> */}
+
+          {/* <KeyboardAccessoryView alwaysVisible={true}>
+         
+          </KeyboardAccessoryView> */}
+      
+      
+
+        {/* <InputAccessoryView style={{backgroundColor: 'white'}} backgroundColor={'#fff'} nativeID={inputAccessoryViewID}> */}
+          
+          {/* <View style={{flex:1, backgroundColor: 'white', flexDirection: 'column'}}>
+            <View style={{flex:1, backgroundColor: 'white', flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
+                <Text>$1500</Text>
+            </View>
+            <View style={{flex:1, backgroundColor: 'white', flexDirection: 'row'}}>
+              <TouchableOpacity style={{flex:1, backgroundColor: '#000',  justifyContent: 'center', alignItems: 'center', padding: 10}}>
+                 <Text>Limpiar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={{flex:1, backgroundColor: 'yellow', justifyContent: 'center', alignItems: 'center', padding: 10  }}>
+                  <Text>Vender</Text>
+              </TouchableOpacity>
+            </View>
+          </View> */}
+          {/* <Button
+            onPress={() => this.setState({text: 'Placeholder Text'})}
+            title="Reset Text"
+          /> */}
+        {/* </InputAccessoryView> */}
 
       
+        <Toaster message={this.state.message} />
+    
           <LinearGradient colors={['#4dd0e1', '#18ffff']} style={{flexDirection: 'row', flexGrow: 1}} start={[0, 0]} end={[0.6, 0]}></LinearGradient>
           <View style={{flexGrow: 8, padding: 10}}>
 
@@ -223,20 +314,23 @@ export default class Home extends React.Component {
               <TextInput 
                 style={styles.textinput}
                 onChangeText={this.searchedProducts}
-                placeholder="Busca tu producto Aqui" />
+                placeholder="Busca tu producto Aqui"
+                 />
             </Card>
           </View>
-       
+
+          <View style={{flexGrow: 10}}>
+              
+          </View>
+          {/* {
+            this.state.productFinderVisible ? (
+              <View style={{height: 100,flexGrow: 1, marginBottom: 370}}>
+                {this.renderProductList()}
+              </View>
+            ) : null
+          } */}
     
-      <View style={{flexGrow: 10}}>
-        <ScrollView style={{height: 100}}>
-          <FlatList
-              data={this.state.soldProducts}
-              keyExtractor={(item, index) => index.toString()}
-              numColumns={3}
-              renderItem={({item}) => this.renderCardProduct(item)} />
-          </ScrollView>
-      </View>
+          
 
 
           </View>
@@ -246,6 +340,36 @@ export default class Home extends React.Component {
             ) : null
           }
 
+
+
+<KeyboardAccessory >
+    <View style={styles.textInputView}>
+
+
+    {
+            this.state.productFinderVisible ? (
+            
+
+            <View  style={{flexDirection: 'row'}}
+                        >
+              {
+                this.state.soldProducts.map((item) => (
+        
+                  <View style={{ height: screenHeight / 8}}>
+                       {this.renderCardProduct(item)}
+                  </View>
+                 
+                ))
+              }
+            </View>
+  
+           
+            ) : null
+          }
+    </View>
+
+        
+        </KeyboardAccessory>
          
       </View>
     )
@@ -265,6 +389,22 @@ const styles = StyleSheet.create({
   },
   textinput: {
     flex: 1
+  },
+  textInputView: {
+    flex: 1
+  },
+  textInput: {
+    flexGrow: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    borderColor: '#CCC',
+    padding: 10,
+    fontSize: 16,
+    marginRight: 10,
+    textAlignVertical: 'top'
+  },
+  textInputButton: {
+    flexShrink: 1,
   }
   
  
